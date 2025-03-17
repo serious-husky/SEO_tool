@@ -1,10 +1,11 @@
 问题类型,数量,描述
 missing_title,151,缺少标题
-missing_description,151,缺少描述
-missing_keywords,151,缺少关键词
-missing_structured_data,151,缺少结构化数据
-missing_dates,151,缺少日期信息
 no_internal_links,151,没有内部链接
+missing_description,139,缺少描述
+missing_keywords,139,缺少关键词
+missing_structured_data,139,缺少结构化数据
+missing_dates,139,缺少日期信息
 long_paragraphs,96,段落过长 (> 300 字符)
 no_headings,58,"没有小标题 (h2, h3)"
+short_description,10,描述过短 (< 50 字符)
 low_content_density,1,内容密度低 (< 200 字)
