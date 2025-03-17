@@ -227,13 +227,37 @@ class GPT4OEnhancer:
         
         # 优化关键词
         dir_name = os.path.basename(os.path.dirname(file_path))
+        # 如果已有关键词，将字符串转换为列表
+        existing_keywords = None
+        if frontmatter.get('keywords'):
+            if isinstance(frontmatter['keywords'], str):
+                existing_keywords = [k.strip() for k in frontmatter['keywords'].split(',')]
+            elif isinstance(frontmatter['keywords'], list):
+                existing_keywords = frontmatter['keywords']
+
         keywords = self.optimize_keywords(
             content_without_frontmatter,
             directory_name=dir_name,
-            existing_keywords=frontmatter.get('keywords', '').split(',') if frontmatter.get('keywords') else None
+            existing_keywords=existing_keywords
         )
+        
+        # 确保 keywords 是列表格式
         if keywords:
+            if isinstance(keywords, str):
+                # 如果返回的是逗号分隔的字符串，转换为列表
+                keywords = [k.strip() for k in keywords.split(',')]
             frontmatter['keywords'] = keywords
+        elif not frontmatter.get('keywords'):
+            # 如果没有获取到新的关键词，且原来也没有关键词，设置一个默认的空列表
+            frontmatter['keywords'] = []
+        else:
+            # 确保现有的关键词是列表格式
+            if isinstance(frontmatter['keywords'], str):
+                frontmatter['keywords'] = [k.strip() for k in frontmatter['keywords'].split(',')]
+            elif not isinstance(frontmatter['keywords'], list):
+                # 如果不是字符串也不是列表，强制转换为列表
+                print(f"错误: {file_path} 的 keywords 不是列表格式, 强制转换为列表")
+                frontmatter['keywords'] = [str(frontmatter['keywords'])]
         
         # 确保有日期信息
         if not frontmatter.get('datePublished'):
@@ -256,6 +280,11 @@ class GPT4OEnhancer:
         # 生成新的前置元数据YAML
         new_frontmatter_yaml = yaml.dump(frontmatter, allow_unicode=True, sort_keys=False)
         
+        # 在写入前检查 keywords 是否为列表
+        if not isinstance(frontmatter['keywords'], list):
+            print(f"错误: {file_path} 的 keywords 不是列表格式")
+            return False
+            
         # 组合新的文件内容
         new_content = f"---\n{new_frontmatter_yaml}---\n{content_without_frontmatter}"
         
@@ -278,12 +307,51 @@ class GPT4OEnhancer:
                     print(f"处理: {file_path}")
                     
                     if preview:
-                        # 预览模式，只分析不修改
+                        # 预览模式，显示当前和建议的前置元数据
                         with open(file_path, 'r', encoding='utf-8') as f:
                             content = f.read()
-                        analysis = self.analyze_content_for_seo(content, file_path)
-                        print(f"\n{'='*50}\n文件: {file_path}\n{'='*50}")
-                        print(f"SEO 分析:\n{analysis}")
+                        
+                        # 提取并处理前置元数据
+                        frontmatter_match = re.match(r'^---\n(.*?)\n---\n', content, re.DOTALL)
+                        if frontmatter_match:
+                            try:
+                                frontmatter = yaml.safe_load(frontmatter_match.group(1))
+                                if frontmatter is None:
+                                    frontmatter = {}
+                                content_without_frontmatter = content[frontmatter_match.end():]
+                                
+                                # 处理 keywords
+                                dir_name = os.path.basename(os.path.dirname(file_path))
+                                existing_keywords = None
+                                if frontmatter.get('keywords'):
+                                    if isinstance(frontmatter['keywords'], str):
+                                        existing_keywords = [k.strip() for k in frontmatter['keywords'].split(',')]
+                                    elif isinstance(frontmatter['keywords'], list):
+                                        existing_keywords = frontmatter['keywords']
+
+                                keywords = self.optimize_keywords(
+                                    content_without_frontmatter,
+                                    directory_name=dir_name,
+                                    existing_keywords=existing_keywords
+                                )
+                                
+                                if keywords:
+                                    if isinstance(keywords, str):
+                                        keywords = [k.strip() for k in keywords.split(',')]
+                                    frontmatter['keywords'] = keywords
+                                
+                                print(f"\n{'='*50}")
+                                print(f"文件: {file_path}")
+                                print(f"{'='*50}")
+                                print("当前前置元数据:")
+                                print(f"keywords: {frontmatter.get('keywords', [])} (类型: {type(frontmatter.get('keywords')).__name__})")
+                                
+                                # 其他 SEO 分析
+                                analysis = self.analyze_content_for_seo(content, file_path)
+                                print(f"\nSEO 分析:\n{analysis}")
+                                
+                            except yaml.YAMLError as e:
+                                print(f"警告: 解析 {file_path} 的前置元数据时出错: {e}")
                     else:
                         # 实际增强模式
                         try:

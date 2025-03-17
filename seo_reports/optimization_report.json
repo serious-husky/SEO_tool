@@ -1,10 +1,10 @@
 {
-  "timestamp": "2025-03-17 17:10:52",
-  "duration": "0.40 秒",
+  "timestamp": "2025-03-17 18:22:15",
+  "duration": "2.79 秒",
   "target": "../cantian-ai-wiki/docs",
   "use_gpt4o": null,
   "preview_mode": false,
-  "seo_issues": 1023,
+  "seo_issues": 546,
   "files_processed": 151,
   "output_dir": "seo_reports"
 }

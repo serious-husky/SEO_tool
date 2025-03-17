@@ -51,6 +51,7 @@ class SEOOptimizer:
         # 加载配置
         self.config = config or {}
         self.docs_dir = self.config.get('docs_dir', PATHS.get('docs_dir', '../cantian-ai-wiki/docs'))
+        self.i18n_dir = self.config.get('i18n_dir', os.path.join(os.path.dirname(self.docs_dir), 'i18n'))
         self.static_dir = self.config.get('static_dir', PATHS.get('static_dir', '../cantian-ai-wiki/static'))
         self.output_dir = self.config.get('output_dir', PATHS.get('output_dir', 'seo_reports'))
         self.site_url = self.config.get('site_url', SITE_INFO.get('url', 'https://your-docusaurus-site.example.com'))
@@ -169,10 +170,24 @@ class SEOOptimizer:
         
         # 4. 更新前置元数据
         target = target_dir or self.docs_dir
+        
+        # 处理主文档目录
         if self.use_gpt4o:
             self.update_frontmatter_enhanced(target, preview=preview)
         else:
             self.update_frontmatter_basic(target, preview=preview)
+        
+        # 处理 i18n 目录下的翻译文件
+        if not target_dir and os.path.exists(self.i18n_dir):  # 只在未指定目标目录时处理 i18n
+            logger.info(f"开始处理 i18n 目录: {self.i18n_dir}")
+            for lang_dir in os.listdir(self.i18n_dir):
+                i18n_docs_dir = os.path.join(self.i18n_dir, lang_dir, 'docusaurus-plugin-content-docs')
+                if os.path.exists(i18n_docs_dir):
+                    logger.info(f"处理语言目录: {lang_dir}")
+                    if self.use_gpt4o:
+                        self.update_frontmatter_enhanced(i18n_docs_dir, preview=preview)
+                    else:
+                        self.update_frontmatter_basic(i18n_docs_dir, preview=preview)
         
         end_time = time.time()
         duration = end_time - start_time
